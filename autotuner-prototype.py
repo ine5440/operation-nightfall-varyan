@@ -20,7 +20,7 @@ def tuner(argv):
     compilation_lines.append(compile_line)
     best_time = sys.maxsize
     best_line = compile_line
-    best_step = 2
+    best_step = 8
 
 
 
@@ -68,7 +68,7 @@ def run(exec_file, best_time):
     average = 0
     times = 10
     skip_count = 3
-
+    skipped = False
 
     for count in range(times):
 	    print("\nStarting run " + str(count))
@@ -76,13 +76,16 @@ def run(exec_file, best_time):
 	    run_trial = subprocess.run(['./'+exec_file, input_size])
 	    t_end = time.time()
 	    average+= t_end-t_begin
-	    if count > skip_count-1 and best_time < 1.5* average/count:
+	    if count > skip_count-2 and best_time * 1.5 < average/count:
 	    	print("Too slow, skipped other runs")
+	    	skipped = True
 	    	break
 
 	    print("Time taken: " + str(t_end-t_begin))
-    average = average/times
-    print("Average of " + str(times) + " runs: " + str(average))
+    if skipped:
+    	average = average/skip_count
+    else:
+    	average = average/times
     return average
 
 
