@@ -9,7 +9,7 @@ import time # for time
 def tuner(argv):
     exec_file = 'matmult'
 
-    compilation_flags = ['-O1', '-O2', '-O3', '-Ofast']
+    compilation_flags = ['-Ofast', '-O3', '-O2', '-O1']
     compilation_lines = list()
     compile_line = ['gcc', '-o',exec_file,'mm.c']
 
@@ -17,8 +17,8 @@ def tuner(argv):
     	compilation_lines.append(compile_line + [flag])
     steps_line = '-DSTEP='
 
-    compile(compile_line, steps_line + str(2))
-    best_time = run(exec_file)
+    compilation_lines.append(compile_line)
+    best_time = sys.maxsize
     best_line = compile_line
     best_step = 2
 
@@ -29,7 +29,7 @@ def tuner(argv):
 	    last_time = sys.maxsize
 
 	    compile(cp_line, steps_line + str(steps))
-	    time = run(exec_file)
+	    time = run(exec_file, best_time)
 	    if time < best_time:
 	    	best_time = time
 	    	best_line = cp_line
@@ -38,7 +38,7 @@ def tuner(argv):
 	    	steps *= 2
 	    	compile(cp_line, steps_line + str(steps))
 	    	last_time = time
-	    	time = run(exec_file)
+	    	time = run(exec_file, best_time)
 	    	if time < best_time:
 	    		best_time = time
 	    		best_line = cp_line
@@ -54,7 +54,7 @@ def tuner(argv):
     # Compile code
 
 def compile(compilation_line, steps):
-    print("Testing compilation with: " + str(compilation_line+[steps]))
+    print("\nTesting compilation with: " + str(compilation_line+[steps]))
     compilation_try = subprocess.run(compilation_line+[steps])
     if (compilation_try.returncode == 0):
         print("Happy compilation")
@@ -63,16 +63,23 @@ def compile(compilation_line, steps):
 
     # Run code
 
-def run(exec_file):
+def run(exec_file, best_time):
     input_size = str(9)
     average = 0
     times = 10
+    skip_count = 3
+
+
     for count in range(times):
 	    print("\nStarting run " + str(count))
 	    t_begin = time.time() # timed run
 	    run_trial = subprocess.run(['./'+exec_file, input_size])
 	    t_end = time.time()
 	    average+= t_end-t_begin
+	    if count > skip_count-1 and best_time < 1.5* average/count:
+	    	print("Too slow, skipped other runs")
+	    	break
+
 	    print("Time taken: " + str(t_end-t_begin))
     average = average/times
     print("Average of " + str(times) + " runs: " + str(average))
