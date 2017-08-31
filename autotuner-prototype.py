@@ -8,26 +8,77 @@ import time # for time
 
 def tuner(argv):
     exec_file = 'matmult'
-    compilation_line = ['gcc','-o',exec_file,'mm.c']
-    steps = ['-DSTEP=2']
+
+    compilation_flags = ['-O1', '-O2', '-O3', '-Ofast']
+    compilation_lines = list()
+    compile_line = ['gcc', '-o',exec_file,'mm.c']
+
+    for flag in compilation_flags:
+    	compilation_lines.append(compile_line + [flag])
+    steps_line = '-DSTEP='
+
+    compile(compile_line, steps_line + str(2))
+    best_time = run(exec_file)
+    best_line = compile_line
+    best_step = 2
+
+
+
+    for cp_line in compilation_lines:
+	    steps = best_step
+	    last_time = sys.maxsize
+
+	    compile(cp_line, steps_line + str(steps))
+	    time = run(exec_file)
+	    if time < best_time:
+	    	best_time = time
+	    	best_line = cp_line
+
+	    while time < last_time:
+	    	steps *= 2
+	    	compile(cp_line, steps_line + str(steps))
+	    	last_time = time
+	    	time = run(exec_file)
+	    	if time < best_time:
+	    		best_time = time
+	    		best_line = cp_line
+	    		best_step = steps
+	    print("-------------")
+
+    print("The best time was: " + str(best_time))
+    print("With the following line: " + str(best_line + [steps_line + str(best_step)]))
+
+    return [best_line, steps_line]
+
 
     # Compile code
-    compilation_try = subprocess.run(compilation_line+steps)
+
+def compile(compilation_line, steps):
+    print("Testing compilation with: " + str(compilation_line+[steps]))
+    compilation_try = subprocess.run(compilation_line+[steps])
     if (compilation_try.returncode == 0):
         print("Happy compilation")
     else:
         print("Sad compilation")
 
     # Run code
-    input_size = str(4)
-    t_begin = time.time() # timed run
-    run_trial = subprocess.run(['./'+exec_file, input_size])
-    t_end = time.time()
-    if (run_trial.returncode == 0):
-        print("Happy execution in "+str(t_end-t_begin))
-    else:
-        print("Sad execution")
+
+def run(exec_file):
+    input_size = str(9)
+    average = 0
+    times = 10
+    for count in range(times):
+	    print("\nStarting run " + str(count))
+	    t_begin = time.time() # timed run
+	    run_trial = subprocess.run(['./'+exec_file, input_size])
+	    t_end = time.time()
+	    average+= t_end-t_begin
+	    print("Time taken: " + str(t_end-t_begin))
+    average = average/times
+    print("Average of " + str(times) + " runs: " + str(average))
+    return average
 
 
 if __name__ == "__main__":
     tuner(sys.argv[1:]) # go auto-tuner
+	
